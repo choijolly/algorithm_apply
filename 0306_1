@@ -1,0 +1,16 @@
+#include <stdio.h>
+
+int GCD_minus(int a, int b) {
+   
+    while (a) {
+        if (b > a) {
+            int val = b;
+            b = a;
+            a = val;
+        }
+            a = a - b;
+         
+     }
+    return b;
+}
+
