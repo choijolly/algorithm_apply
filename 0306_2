@@ -1,0 +1,25 @@
+#include<stdio.h>
+int GCD_mod(int a, int b) {
+    
+    while (b) {
+       
+       int val = a%b;
+       a = b;
+       b = val;
+       
+    }
+    return a;
+}
+
+int main() {
+    int a, b;
+    printf("input the  two integer: ");
+    scanf_s("%d %d", &a, &b);
+
+    int result = GCD_mod(a, b);
+    printf("GCD is %d", result);
+
+    return 0;
+
+}
+
