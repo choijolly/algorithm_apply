@@ -1,0 +1,94 @@
+#include <stdio.h>
+#include <stdbool.h>
+
+#define MAX 10
+
+int stack[MAX];
+int top;
+
+void init_stack(void)
+{
+    top = -1;
+}
+
+int push(int t)
+{
+    if (top >= MAX - 1)
+    {
+        printf("Stack overflow !!!\n");
+        return -1;
+    }
+    stack[++top] = t;
+    return t;
+}
+
+int pop()
+{
+    if (top < 0)
+    {
+        printf("Stack underflow!!!\n");
+        return -1;
+    }
+    return stack[top--];
+}
+
+bool is_stack_empty()
+{
+    return top==-1;
+}
+
+void move(int from, int to)
+{
+    printf("\nMove from %d to %d", from, to);
+}
+
+void nr_hanoi(int n, int from, int by, int to)
+{
+    int done = 0;
+    init_stack();
+
+    while (!done)
+    {
+        while (n > 1)
+        {
+            push(to);
+            push(by);
+            push(from);
+            push(n);
+
+            n--;
+            push(to);
+            to = by;
+            by = pop();
+        }
+
+        move(from, to);
+
+        if (!is_stack_empty())
+        {
+            n = pop();
+            from = pop();
+            by = pop();
+            to = pop();
+            move(from, to);
+
+            n--;
+            push(from);
+            from = by;
+            by = pop();
+        }
+        else
+        {
+            done = 1;
+        }
+    }
+}
+
+int main()
+{
+    int n;
+    printf("Enter number of disks: ");
+    scanf_s("%d", &n);
+    nr_hanoi(n, 1, 2, 3);
+    return 0;
+}
