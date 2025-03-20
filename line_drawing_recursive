@@ -1,0 +1,46 @@
+#define BLK 20
+#include <stdio.h>
+#include <stdlib.h>
+#include <math.h>
+
+void recursive_line(int* canvas, int x1, int y1, int x2, int y2)
+{
+    
+
+    float dist = abs(x1 - x2) + abs(y1 - y2);
+    if (dist < 2) return;
+
+    int cx = (x1 + x2) / 2;
+    int cy = (y1 + y2) / 2;
+
+    // (cx, cy)가 기존 좌표와 같다면 무한 루프 방지
+    if ((cx == x1 && cy == y1) || (cx == x2 && cy == y2)) return;
+
+    canvas[cy * BLK + cx] = 1;  // 점을 찍음
+
+    // 재귀 호출 (4분할 방식)
+    recursive_line(canvas, x1, y1, cx, cy);
+    recursive_line(canvas, cx, cy, x2, y2);
+}
+
+int main()
+{
+    int i, j;
+    int* canvas = (int*)calloc(BLK * BLK, sizeof(int));
+    if (!canvas) {
+        printf("Memory allocation failed!\n");
+        return 1;
+    }
+
+    recursive_line(canvas, 0, 0, BLK - 1, BLK - 1);
+
+    for (i = 0; i < BLK; i++) {
+        for (j = 0; j < BLK; j++) {
+            printf("%-2d", canvas[i * BLK + j]);
+        }
+        printf("\n");
+    }
+
+    free(canvas);
+    return 0;
+}
