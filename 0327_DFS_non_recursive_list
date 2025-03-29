@@ -1,0 +1,160 @@
+#include<stdio.h>
+#include <stdlib.h>
+#define MAX_NODE 100
+#define MAX 10
+
+int GM[MAX_NODE][MAX_NODE];  // 인접 행렬 그래프
+int stack[MAX];              // 스택
+int top;                     // 스택의 top
+int check[MAX_NODE];         // 방문 체크 배열
+
+void init_stack(void) {
+    top = -1;
+}
+
+
+int stack_empty() {
+    return top == -1;
+}
+
+
+int push(int t) {
+    if (top >= MAX - 1) {
+        printf("Stack overflow !!!\n");
+        return -1;
+    }
+    stack[++top] = t;
+    return t;
+}
+
+
+
+int pop() {
+    if (top < 0) {
+        printf("Stack underflow!!!\n");
+        return -1;
+    }
+    return stack[top--];
+}
+
+typedef struct _node {
+    int vertex;
+    struct _node* next;
+}node;
+
+
+node* GL[MAX_NODE];
+int check[MAX_NODE];
+
+
+
+int name2int(char c) {
+    return c - 'A';
+}
+
+
+char int2name(int i) {
+    return i + 'A';
+}
+
+
+void visit(int v) {
+    printf("\nvisited : %c ", int2name(v));
+}
+
+
+
+void input_adjlist(node* a[], int* V, int* E) {
+
+    char vertex[4];
+    int i, j;
+    node* t;
+
+    printf("Input number of node & edge : ");
+    scanf_s("%d %d", V, E);
+
+
+
+    for (i = 0; i < *V; i++) {
+        a[i] = NULL;
+    }
+
+    for (j = 0; j < *E; j++) {
+        printf("Input two node consist of edge : ");
+        scanf_s("%3s", vertex, (unsigned)vertex);
+
+
+        i = name2int(vertex[0]);
+        t = (node*)malloc(sizeof(node));
+        t->vertex = name2int(vertex[1]);
+        t->next = a[i];
+        a[i] = t;
+
+
+        i = name2int(vertex[1]);
+        t = (node*)malloc(sizeof(node));
+        t->vertex = name2int(vertex[0]);
+        t->next = a[i];
+        a[i] = t;
+    }
+}
+
+void print_adjlist(node* a[], int V)
+
+{
+
+    int i, j;
+    printf("\n");
+
+    for (i = 0; i < V; i++) {
+        printf("%3c", int2name(i));
+
+        while (a[i] != NULL) {
+            printf("%3c", int2name(a[i]->vertex));
+            a[i] = a[i]->next;
+        }
+
+        printf("\n");
+
+    }
+
+}
+
+
+    void nrDFS_adjlist(node * a[], int V) {
+       
+        
+        init_stack();
+
+        for (int i = 0; i < V; i++) {
+            if (check[i] == 0) { // 방문하지 않은 노드에서 DFS 시작
+                stack[++top] = i; // 시작 노드를 스택에 push
+                check[i] = 1;      // 방문 체크
+
+                while (top != -1) { // 스택이 비어있지 않다면 반복
+                    int v = stack[top--]; // 스택에서 pop
+                    visit(v);  // 방문 출력
+
+                    node* t;
+                    for (t = a[v]; t != NULL; t = t->next) {
+                        if (check[t->vertex] == 0) { // 방문하지 않은 노드라면
+                            stack[++top] = t->vertex; // 스택에 push
+                            check[t->vertex] = 1; // 방문 체크
+                        }
+                    }
+                }
+            }
+        }
+    }
+
+
+
+
+void main()
+{
+    int V, E;
+    input_adjlist(GL, &V, &E);
+    //print_adjlist(GL, V);
+
+    nrDFS_adjlist(GL, V);
+}
