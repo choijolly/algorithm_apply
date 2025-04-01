@@ -1,12 +1,36 @@
 #include <stdio.h>
+#include <stdlib.h>
 
-#define MAX 10
 #define MAX_NODE 100
-
+#define MAX 10
 int GM[MAX_NODE][MAX_NODE];  // 인접 행렬 그래프
 int stack[MAX];              // 스택
 int top;                     // 스택의 top
 int check[MAX_NODE];         // 방문 체크 배열
+
+
+int check[MAX_NODE];
+int GM[MAX_NODE][MAX_NODE]; // adjacency matrix
+
+typedef struct _dnode {
+    int key;
+    struct _dnode* prev;
+    struct _dnode* next;
+} dnode;
+
+dnode* head, * tail;
+
+int name2int(char c) {
+    return c - 'A';
+}
+
+char int2name(int i) {
+    return i + 'A';
+}
+
+void visit(int v) {
+    printf("\nvisited: %c ", int2name(v));
+}
 
 void init_stack(void) {
     top = -1;
@@ -33,16 +57,70 @@ int pop() {
     return stack[top--];
 }
 
-int name2int(char c) {
-    return c - 'A';
+
+void init_queue() {
+    head = (dnode*)calloc(1, sizeof(dnode));
+    tail = (dnode*)calloc(1, sizeof(dnode));
+    head->prev = head;
+    head->next = tail;
+    tail->prev = head;
+    tail->next = tail;
 }
 
-char int2name(int i) {
-    return i + 'A';
+int put(int k) {
+    dnode* t;
+    if ((t = (dnode*)malloc(sizeof(dnode))) == NULL) {
+        printf("Out of memory!\n");
+        return -1;
+    }
+    t->key = k;
+    tail->prev->next = t;
+    t->prev = tail->prev;
+    tail->prev = t;
+    t->next = tail;
+    return k;
 }
 
-void visit(int v) {
-    printf("\nvisited : %c ", int2name(v));
+int get() {
+    dnode* t;
+    int k;
+    t = head->next;
+    if (t == tail) {
+        printf("Queue underflow\n");
+        return -1;
+    }
+    k = t->key;
+    head->next = t->next;
+    t->next->prev = head;
+    free(t);
+    return k;
+}
+
+int queue_empty() {
+    return head->next == tail;
+}
+
+void BFS_adjmatrix(int a[][MAX_NODE], int V) {
+    int i, j;
+    init_queue();
+    for (i = 0; i < V; i++) check[i] = 0;
+
+    for (i = 0; i < V; i++) {
+        if (check[i] == 0) {
+            put(i);
+            check[i] = 1;
+            while (!queue_empty()) {
+                int node = get();
+                visit(node);
+                for (j = 0; j < V; j++) {
+                    if (a[node][j] != 0 && check[j] == 0) {
+                        put(j);
+                        check[j] = 1;
+                    }
+                }
+            }
+        }
+    }
 }
 
 void input_adjmatrix(int a[][MAX_NODE], int* V, int* E) {
@@ -74,55 +152,55 @@ void input_adjmatrix(int a[][MAX_NODE], int* V, int* E) {
     }
 }
 
-void print_adjmatrix(int a[][MAX_NODE], int* V) {
-    int i, j;
-
-    printf("    ");
-    for (i = 0; i < *V; i++) {
-        printf("%4c", int2name(i));
-    }
-    printf("\n");
-
-    for (i = 0; i < *V; i++) {
-        printf("%4c", int2name(i));
-        for (j = 0; j < *V; j++) {
-            printf("%4d", a[i][j]);
+void print_adjmatrix(int a[][MAX_NODE], int V) {
+    printf("\nAdjacency Matrix:\n");
+    for (int i = 0; i < V; i++) {
+        for (int j = 0; j < V; j++) {
+            printf("%d ", a[i][j]);
         }
         printf("\n");
     }
 }
 
-void DFS_recur_adjmatrix(int a[][MAX_NODE], int V, int i) {
-    int j;
-    check[i] = 1;
-    visit(i);
-    for (j = 0; j < V; j++) {
-        if (a[i][j] != 0 && check[j] == 0) {
-            DFS_recur_adjmatrix(a, V, j);
-        }
-    }
-}
+void count_components(int a[][MAX_NODE], int V) {
+    int cnt = 0;
+    int i, j;
+    init_stack();
 
-void DFS_adjmatrix(int a[][MAX_NODE], int V) {
-    int i;
+    for (i = 0; i < V; i++) check[i] = 0;
+
     for (i = 0; i < V; i++) {
-        check[i] = 0;
-    }
-
-    for (i = 0; i < V; i++) {   //하나의 그래프일 경우에 상관없지만 여러개일 경우 고려
         if (check[i] == 0) {
-            DFS_recur_adjmatrix(a, V, i);
+            cnt++; // 새로운 연결 요소 발견
+            push(i);
+            check[i] = 1;
+
+            while (!stack_empty()) {
+                int node = pop();
+                printf(" %c", int2name(node));
+
+                for (j = 0; j < V; j++) {
+                    if (a[node][j] != 0 && check[j] == 0) {
+                        push(j);
+                        check[j] = 1;
+                    }
+                }
+            }
+            printf("\n");
         }
     }
+    printf("# of CC : %d\n", cnt);
 }
+
+
+
 
 int main() {
     int V, E;
-
     input_adjmatrix(GM, &V, &E);
-    print_adjmatrix(GM, &V);
+    //print_adjmatrix(GM, V);
 
-    DFS_adjmatrix(GM, V);
-
+    BFS_adjmatrix(GM, V);
+    count_components(GM, V);
     return 0;
 }
