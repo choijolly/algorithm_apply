@@ -1,3 +1,4 @@
+#define _CRT_SECURE_NO_WARNINGS
 #include<stdio.h>
 #include <stdlib.h>
 #define MAX_NODE 100
@@ -71,7 +72,7 @@ void input_adjlist(node* a[], int* V, int* E) {
     node* t;
 
     printf("Input number of node & edge : ");
-    scanf_s("%d %d", V, E);
+    scanf("%d %d", V, E);
 
 
 
@@ -81,7 +82,7 @@ void input_adjlist(node* a[], int* V, int* E) {
 
     for (j = 0; j < *E; j++) {
         printf("Input two node consist of edge : ");
-        scanf_s("%3s", vertex, (unsigned)vertex);
+        scanf("%3s", vertex, (unsigned)vertex);
 
 
         i = name2int(vertex[0]);
@@ -121,31 +122,31 @@ void print_adjlist(node* a[], int V)
 }
 
 
-    void nrDFS_adjlist(node * a[], int V) {
-       
-        
-        init_stack();
+void nrDFS_adjlist(node* a[], int V) {
 
-        for (int i = 0; i < V; i++) {
-            if (check[i] == 0) { // 방문하지 않은 노드에서 DFS 시작
-                stack[++top] = i; // 시작 노드를 스택에 push
-                check[i] = 1;      // 방문 체크
 
-                while (top != -1) { // 스택이 비어있지 않다면 반복
-                    int v = stack[top--]; // 스택에서 pop
-                    visit(v);  // 방문 출력
+    init_stack();
 
-                    node* t;
-                    for (t = a[v]; t != NULL; t = t->next) {
-                        if (check[t->vertex] == 0) { // 방문하지 않은 노드라면
-                            stack[++top] = t->vertex; // 스택에 push
-                            check[t->vertex] = 1; // 방문 체크
-                        }
+    for (int i = 0; i < V; i++) {
+        if (check[i] == 0) { // 방문하지 않은 노드에서 DFS 시작
+            push(i); // 시작 노드를 스택에 push
+            check[i] = 1;      // 방문 체크
+
+            while (top != -1) { // 스택이 비어있지 않다면 반복
+                int v = pop(); // 스택에서 pop
+                visit(v);  // 방문 출력
+
+                node* t;
+                for (t = a[v]; t != NULL; t = t->next) {
+                    if (check[t->vertex] == 0) { // 방문하지 않은 노드라면
+                       push( t->vertex); // 스택에 push
+                        check[t->vertex] = 1; // 방문 체크
                     }
                 }
             }
         }
     }
+}
 
 
 
