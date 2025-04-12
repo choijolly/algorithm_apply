@@ -194,7 +194,8 @@ int main() {
     int V, E;
 
     input_adjlist(GL, &V, &E);
-    print_adjlist(GL, V);
+    //print_adjlist(GL, V);
+    BFS_adjlist(GL, V);
     count_components_adjlist(GL, V);
 
 
