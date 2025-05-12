@@ -71,7 +71,7 @@ void input_adjmatrix(int a[][MAX_NODE], int* V, int* E) {
 
     // 대각 행렬은 1
     for (i = 0; i < *V; i++) {
-        a[i][i] = 1;
+        a[i][i] = 0;
     }
 
     // 간선 정보 입력
@@ -83,7 +83,7 @@ void input_adjmatrix(int a[][MAX_NODE], int* V, int* E) {
         j = name2int(vertex[1]);
 
         a[i][j] = 1;
-       
+
     }
 }
 
@@ -110,22 +110,24 @@ void DFS_directed(int a[][MAX_NODE], int V) {
     init_stack();
 
     for (i = 0; i < V; i++) {
+        // 방문 배열 초기화
         for (j = 0; j < V; j++) {
             check[j] = 0;
         }
 
         push(i);
         check[i] = 1;
-        printf("\n%c", int2name(i));
+        printf("\nDFS from %c:\n", int2name(i));
 
         while (!stack_empty()) {
             j = pop();
             visit(j);
 
-            for (j=0; j<V; j++) {
-                if (check[j] == 0) {
-                    push(j);
-                    check[j] = 1;
+            // 정순 탐색: 작은 번호부터 push
+            for (int k = 0; k < V; k++) {
+                if (a[j][k] == 1 && check[k] == 0) {
+                    push(k);
+                    check[k] = 1;
                 }
             }
         }
@@ -152,7 +154,7 @@ int main() {
     int V, E;
 
     input_adjmatrix(GM, &V, &E);
-    
+
 
     warshall(GM, V);
 
