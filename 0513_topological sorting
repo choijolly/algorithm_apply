@@ -1,0 +1,147 @@
+#define _CRT_SECURE_NO_WARNINGS
+#include <stdio.h>
+#include <stdlib.h>
+
+#define MAX_NODE 100
+#define MAX 10
+
+// 인접 리스트 노드 구조체
+typedef struct _node {
+    int vertex;
+    struct _node* next;
+} node;
+
+// 진입 차수 정보를 담은 구조체
+typedef struct _head {
+    int count;
+    node* next;
+} head;
+
+int top;
+int stack[MAX];
+int check[MAX_NODE];
+node* GL[MAX_NODE];             // 일반 DFS용 인접 리스트
+head head_network[MAX_NODE];    // 위상 정렬용 구조체 배열
+
+// 스택 함수
+void init_stack(void) {
+    top = -1;
+}
+int stack_empty() {
+    return top == -1;
+}
+int push(int t) {
+    if (top >= MAX - 1) {
+        printf("Stack overflow !!!\n");
+        return -1;
+    }
+    stack[++top] = t;
+    return t;
+}
+int pop() {
+    if (top < 0) {
+        printf("Stack underflow!!!\n");
+        return -1;
+    }
+    return stack[top--];
+}
+
+// 문자 ↔ 숫자 변환
+int name2int(char c) {
+    return c - 'A';
+}
+char int2name(int i) {
+    return i + 'A';
+}
+
+// 방문 표시
+void visit(int v) {
+    printf("%c ", int2name(v));
+}
+
+// 인접 리스트 입력
+void input_adjlist(node* a[], int* V, int* E) {
+    char vertex[4];
+    int i, j;
+    node* t;
+
+    printf("Input number of node & edge : ");
+    scanf("%d %d", V, E);
+
+    for (i = 0; i < *V; i++) {
+        a[i] = NULL;
+    }
+
+    for (j = 0; j < *E; j++) {
+        printf("Input two node consist of edge : ");
+        scanf("%3s", vertex);
+
+        // vertex[0] → vertex[1]
+        i = name2int(vertex[0]);
+        t = (node*)malloc(sizeof(node));
+        t->vertex = name2int(vertex[1]);
+        t->next = a[i];
+        a[i] = t;
+
+    }
+}
+
+
+
+// 진입 차수 계산
+void set_count_indegree(head net[], int V) {
+    for (int i = 0; i < V; i++) {
+        int count = 0;
+        for (int j = 0; j < V; j++) {
+            for (node* t = net[j].next; t != NULL; t = t->next) {
+                if (t->vertex == i) count++;
+            }
+        }
+        net[i].count = count;
+    }
+}
+
+// 위상 정렬
+void topsort(head net[], int V) {
+    init_stack();
+    set_count_indegree(net, V);
+
+    for (int i = 0; i < V; i++) {
+        if (net[i].count == 0) push(i);
+    }
+
+    for (int i = 0; i < V; i++) {
+        if (stack_empty()) {
+            printf("Cycle detected. Cannot perform topological sort.\n");
+            return;
+        }
+
+        int j = pop();
+        printf("%c ", int2name(j));
+
+        for (node* ptr = net[j].next; ptr != NULL; ptr = ptr->next) {
+            int k = ptr->vertex;
+            net[k].count--;
+            if (net[k].count == 0)
+                push(k);
+        }
+    }
+}
+
+// 메인 함수
+int main() {
+    int V, E;
+
+    input_adjlist(GL, &V, &E);
+
+    // 교수님 방식: 인접 리스트 얕은 복사
+    for (int k = 0; k < V; k++) {
+        head_network[k].next = GL[k]; // GL[k]를 공유
+    }
+
+    
+    printf("\n\n--- Topological Sort ---\n");
+    topsort(head_network, V);
+
+    return 0;
+}
