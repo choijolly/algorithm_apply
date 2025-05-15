@@ -1,228 +1,77 @@
-#define _CRT_SECURE_NO_WARNINGS
 #include <stdio.h>
 #include <stdlib.h>
-#include <limits.h>
-#include <string.h>
 
-#define MAX_NODE 100
-#define UNSEEN (-INT_MAX)
-#define INFINITE 1000000000
+#define _CRT_SECURE_NO_WARNINGS
+#pragma warning(disable: 4996)
 
-// 함수 선언 추가 (heap 관련)
-void pq_init(void);
-int pq_empty(void);
-int pq_update(int h[], int v, int p);
-void upheap(int h[], int k);
-void adjust_heap(int h[], int n);
-int pq_extract(int h[]);
-void downheap(int h[], int k);
+#define MAX_NODE 50
+#define INFINITE 1000000  // 충분히 큰 값으로 설정
 
+int G[MAX_NODE][MAX_NODE];  // 인접 행렬 그래프
+int check[MAX_NODE];        // 방문 여부
+int parent[MAX_NODE];       // 부모 노드
+int distance[MAX_NODE];     // 최단 거리
 
-typedef struct node {
-    int vertex;
-    int weight;
-    struct node* next;
-} node;
+// 문자 → 정수
+int name2int(char c) {
+    return c - 'A';
+}
 
-// 글로벌 변수 선언
-node* G[MAX_NODE];
-int heap[MAX_NODE];
-int check[MAX_NODE];
-int parent[MAX_NODE];
-int distance[MAX_NODE];
-int nheap = 0;
-FILE* fp;
+// 정수 → 문자
+char int2name(int i) {
+    return i + 'A';
+}
 
-// 이름 <-> 정수 변환
-int name2int(char c) { return c - 'A'; }
-char int2name(int i) { return i + 'A'; }
+FILE* graph;  // 파일 포인터
 
-// 그래프 입력 (인접 리스트)
-void input_adjlist(node* g[], int* V, int* E) {
+// 그래프 입력
+void input_adjmatrix(int a[][MAX_NODE], int* V, int* E) {
     char vertex[3];
-    int i, j, w;
-    node* t;
+    int w, i, j, k;
 
-    fscanf(fp, "%d %d", V, E);
-    for (i = 0; i < *V; i++) g[i] = NULL;
+    printf("\nInput number of nodes & edges ->\n");
+    fscanf(graph, "%d %d", V, E);
 
-    for (j = 0; j < *E; j++) {
-        fscanf(fp, "%s %d", vertex, &w);
+    for (i = 0; i < *V; i++)
+        for (j = 0; j < *V; j++)
+            a[i][j] = INFINITE;
 
-        t = (node*)malloc(sizeof(node));
-        t->vertex = name2int(vertex[1]);
-        t->weight = w;
-        t->next = g[name2int(vertex[0])];
-        g[name2int(vertex[0])] = t;
+    for (i = 0; i < *V; i++)
+        a[i][i] = 0;
 
-        t = (node*)malloc(sizeof(node));
-        t->vertex = name2int(vertex[0]);
-        t->weight = w;
-        t->next = g[name2int(vertex[1])];
-        g[name2int(vertex[1])] = t;
+    printf("Input two nodes of edge and weight ->\n");
+    for (k = 0; k < *E; k++) {
+        fscanf(graph, "%s %d", vertex, &w);
+        i = name2int(vertex[0]);
+        j = name2int(vertex[1]);
+        a[i][j] = w;
+        a[j][i] = w;
     }
 }
 
-// 인접 리스트 출력
-void print_adjlist(node* g[], int V) {
+// 그래프 출력
+void print_adjmatrix(int a[][MAX_NODE], int V) {
+    printf("\n   ");
+    for (int i = 0; i < V; i++)
+        printf("%6c", int2name(i));
+    printf("\n");
+
     for (int i = 0; i < V; i++) {
-        printf("%c", int2name(i));
-        for (node* t = g[i]; t != NULL; t = t->next) {
-            printf("-> %c:%d ", int2name(t->vertex), t->weight);
-        }
+        printf("%6c", int2name(i));
+        for (int j = 0; j < V; j++)
+            printf("%6d", a[i][j]);
         printf("\n");
     }
 }
 
-// 인접 리스트 -> 인접 행렬 변환
-void convert_to_matrix(node* g[], int a[][MAX_NODE], int V) {
-    for (int i = 0; i < V; i++) {
-        for (int j = 0; j < V; j++)
-            a[i][j] = (i == j) ? 0 : INFINITE;
-
-        for (node* t = g[i]; t != NULL; t = t->next)
-            a[i][t->vertex] = t->weight;
-    }
-}
-
-// visit, 트리, 비용 출력
-void visit(int i) { printf(" -> %c ", int2name(i)); }
-
-void print_heap(int h[]) {
-    for (int i = 1; i <= nheap; i++)
-        printf("%c:%d ", int2name(h[i]), check[h[i]]);
+// 거리 배열 출력
+void print_distance(int V) {
+    for (int i = 0; i < V; i++)
+        printf("%6d", distance[i]);
     printf("\n");
 }
 
-void print_tree(int tree[], int n) {
-    printf("\nTree structure\nson     ");
-    for (int i = 0; i < n; i++) printf("%c  ", int2name(i));
-    printf("\n------------------------------\nparent  ");
-    for (int i = 0; i < n; i++) {
-        if (tree[i] == -1) printf(" -  ");
-        else printf("%c  ", int2name(tree[i]));
-    }
-    printf("\n");
-}
-
-void print_cost(int check[], int V) {
-    int total = 0;
-    for (int i = 1; i < V; i++)
-        if (check[i] != UNSEEN) total += check[i];
-    printf("Minimum Cost is %d\n", total);
-}
-
-void print_distance(int dist[], int x, int V) {
-    static int call_count = 0;
-
-    // 첫 호출 때는 헤더 출력
-    if (call_count == 0) {
-        printf("Vertex x |");
-        for (int i = 0; i < V; i++) {
-            printf(" %c ", int2name(i));
-        }
-        printf("\n-----------------------------------------------------\n");
-    }
-
-    printf("   %c      |", int2name(x));
-    for (int i = 0; i < V; i++) {
-        if (dist[i] >= INFINITE)
-            printf("INF ");
-        else
-            printf("%3d ", dist[i]);
-    }
-    printf("\n");
-
-    call_count++;
-}
-
-
-// ------------------- PFS + 힙 함수들 -----------------------
-void pq_init(void) { nheap = 0; }
-
-int pq_empty(void) { return nheap == 0; }
-
-int pq_update(int h[], int v, int p) {
-    if (check[v] == UNSEEN) {
-        h[++nheap] = v;
-        check[v] = p;
-        upheap(h, nheap);
-        return 1;
-    }
-    else {
-        if (check[v] < p) {
-            check[v] = p;
-            adjust_heap(h, nheap);
-            return 1;
-        }
-        return 0;
-    }
-}
-
-void upheap(int h[], int k) {
-    int v = h[k];
-    while (k > 1 && check[h[k / 2]] <= check[v]) {
-        h[k] = h[k / 2];
-        k /= 2;
-    }
-    h[k] = v;
-}
-
-void adjust_heap(int h[], int n) {
-    for (int k = n / 2; k >= 1; k--)
-        downheap(h, k);
-}
-
-int pq_extract(int h[]) {
-    int v = h[1];
-    h[1] = h[nheap--];
-    downheap(h, 1);
-    return v;
-}
-
-void downheap(int h[], int k) {
-    int i, v = h[k];
-    while (k <= nheap / 2) {
-        i = k * 2;
-        if (i < nheap && check[h[i]] < check[h[i + 1]])
-            i++;
-        if (check[v] >= check[h[i]]) break;
-        h[k] = h[i];
-        k = i;
-    }
-    h[k] = v;
-}
-
-void PFS_adjlist(node* g[], int V) {
-    pq_init();
-    for (int i = 0; i < V; i++) {
-        check[i] = UNSEEN;
-        parent[i] = 0;
-    }
-
-    for (int i = 0; i < V; i++) {
-        if (check[i] == UNSEEN) {
-            parent[i] = -1;
-            pq_update(heap, i, UNSEEN);
-
-            while (!pq_empty()) {
-                int curr = pq_extract(heap);
-                check[curr] = -check[curr];
-                visit(curr);
-
-                for (node* t = g[curr]; t != NULL; t = t->next) {
-                    if (check[t->vertex] < 0) {
-                        if (pq_update(heap, t->vertex, -t->weight))
-                            parent[t->vertex] = curr;
-                    }
-                }
-            }
-        }
-    }
-}
-
-// ------------------- 다익스트라 함수 -----------------------
-
+// Dijkstra 알고리즘
 void dijkstra(int a[][MAX_NODE], int s, int V) {
     int x = 0, y, d;
     int i, checked = 0;
@@ -235,7 +84,7 @@ void dijkstra(int a[][MAX_NODE], int s, int V) {
     check[s] = 1;
     checked++;
 
-    print_distance(distance, s, V);
+    print_distance( V);
 
     while (checked < V) {
         x = 0;
@@ -256,40 +105,51 @@ void dijkstra(int a[][MAX_NODE], int s, int V) {
                 parent[y] = x;
             }
         }
-        print_distance(distance, x, V);
+        print_distance( V);
     }
 }
 
-// ------------------- 메인 -----------------------
+// 부모 트리 출력
+void print_tree(int parent[], int V, int start) {
+    printf("\n\nson-parent\n");
 
-int main(void) {
+    printf("son    ");
+    for (int i = 0; i < V; i++)
+        printf("%c ", int2name(i));
+
+    printf("\n----------------------------\n");
+
+    printf("parent ");
+    for (int i = 0; i < V; i++) {
+        if (i == start)
+            printf("- ");
+        else
+            printf("%c ", int2name(parent[i]));
+    }
+    printf("\n");
+}
+
+// 메인 함수
+int main() {
     int V, E;
-    char startchar;
-    int startpoint;
-    char mode[20];
-    int adj_matrix[MAX_NODE][MAX_NODE];
+    int start_node = 5;  // 예: 'F'
 
-    fp = fopen("C:\\Users\\미경\\Downloads\\graph.txt", "rt");
-    if (fp == NULL) {
-        printf("파일을 열 수 없습니다.\n");
+    graph = fopen("C:/Users/미경/Desktop/graph.txt", "rt");
+    if (graph == NULL) {
+        perror("파일을 열 수 없습니다");
         return 1;
     }
 
-    input_adjlist(G, &V, &E);
-    printf("\nOriginal graph:\n");
-    print_adjlist(G, V);
 
-    convert_to_matrix(G, adj_matrix, V);
-    for (int i = 0; i < V; i++) check[i] = 0;
+    printf("Original Graph ->\n");
+    input_adjmatrix(G, &V, &E);
+    print_adjmatrix(G, V);
 
-    printf("\n--- Dijkstra Algorithm ---\n");
-    printf("PUT THE START POINT (e.g., A, B, C...): ");
-    scanf(" %c", &startchar);  // ⚠️ %c 앞에 공백 필수
-    startpoint = name2int(startchar);  // 문자 → 숫자 인덱스
+    printf("\nDijkstra Algorithm ->\n\n");
+    dijkstra(G, start_node, V);
 
-    dijkstra(adj_matrix, startpoint, V);
-    print_tree(parent, V);
+    print_tree(parent, V, start_node);
 
-    fclose(fp);
+    fclose(graph);
     return 0;
 }
