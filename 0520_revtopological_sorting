@@ -1,0 +1,146 @@
+#define _CRT_SECURE_NO_WARNINGS
+#include <stdio.h>
+#include <stdlib.h>
+
+#define MAX_NODE 100
+#define MAX 10
+
+// 인접 리스트 노드 구조체
+typedef struct _node {
+    int vertex;
+    struct _node* next;
+} node;
+
+// 진입 차수 정보를 담은 구조체
+typedef struct _head {
+    int count;
+    node* next;
+} head;
+
+int top;
+int stack[MAX];
+int check[MAX_NODE];
+node* GL[MAX_NODE];             // 일반 DFS용 인접 리스트
+head head_network[MAX_NODE];    // 위상 정렬용 구조체 배열
+FILE* fp;
+
+// 스택 함수
+void init_stack(void) {
+    top = -1;
+}
+int stack_empty() {
+    return top == -1;
+}
+int push(int t) {
+    if (top >= MAX - 1) {
+        printf("Stack overflow !!!\n");
+        return -1;
+    }
+    stack[++top] = t;
+    return t;
+}
+int pop() {
+    if (top < 0) {
+        printf("Stack underflow!!!\n");
+        return -1;
+    }
+    return stack[top--];
+}
+
+// 문자 ↔ 숫자 변환
+int name2int(char c) {
+    return c - 'A';
+}
+char int2name(int i) {
+    return i + 'A';
+}
+
+// 방문 표시
+void visit(int v) {
+    printf("%c ", int2name(v));
+}
+
+// 인접 리스트 입력
+void input_adjlist(node* a[], int* V, int* E) {
+    char vertex[4];
+    int i, j;
+    node* t;
+
+    fscanf(fp, "%d %d", V, E);
+
+    for (i = 0; i < *V; i++) {
+        a[i] = NULL; // 정점별 리스트 초기화
+    }
+
+    for (j = 0; j < *E; j++) {
+        fscanf(fp, "%3s", vertex); // 간선 문자열 읽기
+
+        i = name2int(vertex[0]);
+        t = (node*)malloc(sizeof(node));
+        t->vertex = name2int(vertex[1]);
+        t->next = a[i];
+        a[i] = t;
+    }
+}
+
+
+
+// 진입 차수 계산
+void set_count_outdegree(head net[], int V)
+{
+    int i, count;
+    node* t;
+    for (i = 0; i < V; i++) {
+        count = 0;
+        for (t = net[i].next; t; t = t->next)
+            count++;
+        net[i].count = count;
+    }
+}
+
+// 위상 정렬
+void revtopsort(head net[], int V)
+{
+    int i, j, k;
+    node* ptr;
+    init_stack();
+    set_count_outdegree(net, V);
+    for (i = 0; i < V; i++)
+        if (!net[i].count) push(i);
+    for (i = 0; i < V; i++) {
+        if (stack_empty()) return -1;
+        else {
+            j = pop();
+            printf("% c, ", int2name(j));
+            for (k = 0; k < V; k++)
+                for (ptr = net[k].next; ptr; ptr = ptr->next)
+                    if (ptr->vertex == j) {
+                        net[k].count--;
+                        if (!net[k].count)
+                            push(k);
+                    }
+        }
+    }
+}
+
+// 메인 함수
+int main() {
+    int V, E;
+    fp = fopen("C:\\Users\\미경\\Desktop\\graph_topsort.txt", "r");
+    if (fp == NULL) {
+        perror("파일 열기 실패");
+        return 1;
+    }
+
+    input_adjlist(GL, &V, &E);
+    fclose(fp);
+
+    for (int k = 0; k < V; k++) {
+        head_network[k].next = GL[k];
+    }
+
+    printf("\n\n--- revTopological Sort ---\n");
+    revtopsort(head_network, V);
+
+    return 0;
+}
