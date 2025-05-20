@@ -22,6 +22,7 @@ int stack[MAX];
 int check[MAX_NODE];
 node* GL[MAX_NODE];             // 일반 DFS용 인접 리스트
 head head_network[MAX_NODE];    // 위상 정렬용 구조체 배열
+FILE* fp;
 
 // 스택 함수
 void init_stack(void) {
@@ -66,15 +67,14 @@ void input_adjlist(node* a[], int* V, int* E) {
     node* t;
 
     printf("Input number of node & edge : ");
-    scanf("%d %d", V, E);
+    fscanf(fp, "%d %d", V, E);
 
     for (i = 0; i < *V; i++) {
         a[i] = NULL;
     }
 
     for (j = 0; j < *E; j++) {
-        printf("Input two node consist of edge : ");
-        scanf("%3s", vertex);
+        fscanf(fp, "%3s", vertex); // 간선 문자열 읽기
 
         // vertex[0] → vertex[1]
         i = name2int(vertex[0]);
@@ -132,6 +132,7 @@ void topsort(head net[], int V) {
 int main() {
     int V, E;
 
+    fp = fopen("C:\\Users\\미경\\Desktop\\graph_topsort.txt", "r");
     input_adjlist(GL, &V, &E);
 
     // 교수님 방식: 인접 리스트 얕은 복사
@@ -139,7 +140,7 @@ int main() {
         head_network[k].next = GL[k]; // GL[k]를 공유
     }
 
-    
+
     printf("\n\n--- Topological Sort ---\n");
     topsort(head_network, V);
 
