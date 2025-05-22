@@ -71,6 +71,16 @@ void input_adjlist(node* a[], int* V, int* E) {
     }
 }
 
+
+void print_adjlist(node* g[], int V) {
+    for (int i = 0; i < V; i++) {
+        printf("%c", int2name(i));
+        for (node* t = g[i]; t != NULL; t = t->next)
+            printf(" -> %c:%d", int2name(t->vertex), t->weight);
+        printf("\n");
+    }
+}
+
 // Forward Pass (earliest time 계산)
 void forward_state(head net[], int V) {
     int i, j, k;
@@ -143,7 +153,7 @@ void print_critical_activity(head net[], int V) {
         for (t = net[i].next; t; t = t->next) {
             e = earliest[i];
             l = latest[t->vertex] - t->weight;
-            printf("<%c %c>    %-5d %-5d %-10d %s\n",
+            printf("<%c %c>    %-6d %-7d %-12d %s\n",
                 int2name(i), int2name(t->vertex),
                 e, l, (l - e),
                 (e == l) ? "Yes" : "No");
@@ -163,6 +173,7 @@ int main(void) {
 
     // 입력 및 네트워크 구성
     input_adjlist(GL, &V, &E);
+    print_adjlist(GL, V);
     for (k = 0; k < V; k++)
         network[k].next = GL[k];
 
