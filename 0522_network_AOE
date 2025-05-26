@@ -121,7 +121,8 @@ void forward_state(head net[], int V) {
         j = pop();
         for (ptr = net[j].next; ptr; ptr = ptr->next) {
             k = ptr->vertex;
-            if (--net[k].count == 0)
+            net[k].count--;
+            if (net[k].count == 0)
                 push(k);
             if (earliest[k] < earliest[j] + ptr->weight)
                 earliest[k] = earliest[j] + ptr->weight;
