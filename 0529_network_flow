@@ -1,0 +1,223 @@
+#define _CRT_SECURE_NO_WARNINGS
+#include <stdio.h>
+#include <stdlib.h>
+
+#define SOURCE 'S'
+#define SINK 'T'
+#define MAX_NODE 100
+
+int Capacity[MAX_NODE][MAX_NODE]; // for capacity
+int Flow[MAX_NODE][MAX_NODE];     // for flow
+int Residual[MAX_NODE][MAX_NODE]; // for residual network
+int check[MAX_NODE];              // for checking the visit
+int parent[MAX_NODE];             // for BFS-based tree
+int path[MAX_NODE];               // for augmenting path
+
+// for queue
+int queue[MAX_NODE];
+int front, rear;
+
+FILE* fp;
+
+int name2int(char c) {
+    if (c == SOURCE) return 0;
+    if (c == SINK)return 1;
+    return c - 'A' + 2;
+}
+
+int int2name(int i) {
+    if (i == 0) return SOURCE;
+    if (i == 1) return SINK;
+    return i + 'A' + 2;
+}
+
+void clear_matrix(int a[][MAX_NODE], int V) {
+    int i, j;
+
+    for (i = 0; i < V; i++) {
+        for (j = 0; j < V; j++) {
+            a[i][j] = 0;
+        }
+    }
+}
+
+//===========================================[queue access]==================================================
+
+void init_queue() {
+    front = rear = 0;
+}
+
+void put(int k) {
+    queue[rear] = k;
+    rear = (++rear) % MAX_NODE;
+}
+
+int get() {
+    int i;
+    i = queue[front];
+    front = (++front) % MAX_NODE;
+    return i;
+}
+
+int queue_empty() {
+    if (front == rear)
+        return 1;
+    else
+        return 0;
+}
+
+
+//==========================================[I/O function]==================================================
+
+void input_adjmatrix(int a[][MAX_NODE], int* V, int* E) {
+    char vertex[3];
+    int i, j, k, w;
+
+    printf("Input number of nodes & edges ->\n");
+    fscanf(fp, "%d %d", V, E);
+
+    // initializing
+    for (i = 0; i < *V; i++) {
+        for (j = 0; j < *V; j++) {
+            a[i][j] = 0;
+        }
+    }
+
+    // 대각성분은 0으로 초기화
+    for (i = 0; i < *V; i++)
+        a[i][i] = 0;
+
+    printf("Input two nodes of edge and weight -> ");
+    for (k = 0; k < *E; k++) {
+        fscanf(fp, "%s %d", vertex, &w);
+        i = name2int(vertex[0]);
+        j = name2int(vertex[1]);
+        a[i][j] = w;
+    }
+}
+
+void construct_residual(int c[][MAX_NODE], int f[][MAX_NODE], int r[][MAX_NODE], int V) {
+    int i, j;
+    for (i = 0; i < V; i++) {
+        for (j = 0; j < V; j++) {
+            r[i][j] = c[i][j] - f[i][j];
+        }
+    }
+}
+
+void print_adjmatrix(int a[][MAX_NODE], int V) {
+    int i, j;
+    printf("    ");
+    for (i = 0; i < V; i++) {
+        printf("%4c", int2name(i));
+    }
+    printf("\n");
+    for (i = 0; i < V; i++) {
+        printf("%4c", int2name(i));
+        for (j = 0; j < V; j++) {
+            printf("%4d", a[i][j]);
+        }
+        printf("\n");
+    }
+}
+
+
+void set_path() {
+    int* temp;
+    int i, count = 0;
+    temp = (int*)calloc(MAX_NODE, sizeof(int));
+    i = name2int(SINK);
+    while (i >= 0) {
+        temp[count] = i;
+        i = parent[i];
+        count++;
+    }
+    for (i = 0; i < count; i++)
+        path[i] = temp[count - i - 1];
+    path[i] = -1;
+    free(temp);
+}
+
+
+
+// Conduct BFS and get the spanning tree
+int get_augment_path(int a[][MAX_NODE], int V, int S, int T) {
+    int i, j;
+    init_queue();
+
+    // initialize check & parent
+    for (i = 0; i < V; i++) {
+        check[i] = 0;
+        parent[i] = -1;
+    }
+
+    i = name2int(S);
+    if (check[i] == 0) {
+        put(i);
+        check[i] = 1;
+        while (!queue_empty()) {
+            i = get();
+            if (i == name2int(T))break;
+
+            for (j = 0; j < V; j++) {
+                if (a[i][j] != 0) {
+                    if (check[j] == 0) {
+                        put(j);
+                        check[j] = 1;
+                        parent[j] = i;
+                    }
+                }
+            }
+
+        }
+    }
+    set_path();
+    if (i == name2int(T)) return 1;
+    else return 0;
+}
+
+void network_flow(int c[][MAX_NODE], int f[][MAX_NODE], int r[][MAX_NODE], int V, int S, int T) {
+    int i, min;
+    clear_matrix(f, V); // f is set to 0
+    clear_matrix(r, V); // r is set to 0
+
+    construct_residual(c, f, r, V);
+
+    while (get_augment_path(r, V, S, T)) {
+        min = INT_MAX;
+
+        for (i = 1; path[i] >= 0; i++)
+            if (min > r[path[i - 1]][path[i]]) min = r[path[i - 1]][path[i]];
+
+        for (i = 1; path[i] >= 0; i++) {
+            f[path[i - 1]][path[i]] = f[path[i - 1]][path[i]] + min;
+            f[path[i]][path[i - 1]] = -f[path[i - 1]][path[i]];
+        }
+        construct_residual(c, f, r, V);
+    }
+
+}
+
+void main() {
+    int V, E;
+
+    fp = fopen("C:\\Users\\미경\\Downloads\\capacity.txt", "r");
+    input_adjmatrix(Capacity, &V, &E);
+  
+    printf("\n");
+
+
+    printf("\nCapacity Network ->\n");
+    print_adjmatrix(Capacity, V);
+
+    network_flow(Capacity, Flow, Residual, V, SOURCE, SINK);
+
+    printf("\nprint Flow network\n");
+    print_adjmatrix(Flow, V);
+
+    printf("\nprint Residual network\n");
+    print_adjmatrix(Residual, V);
+
+
+    fclose(fp);
+}
