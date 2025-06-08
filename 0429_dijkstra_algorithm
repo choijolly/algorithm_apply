@@ -65,7 +65,7 @@ void print_adjmatrix(int a[][MAX_NODE], int V) {
 }
 
 // 거리 배열 출력
-void print_distance(int distance[],int s,int V) {
+void print_distance(int distance[], int s, int V) {
     for (int i = 0; i < V; i++)
         printf("%6d", distance[i]);
     printf("\n");
@@ -74,42 +74,55 @@ void print_distance(int distance[],int s,int V) {
 // Dijkstra 알고리즘
 void dijkstra(int a[][MAX_NODE], int s, int V) {
     int x = 0;
-    int i,y, d;
+    int i, y, d;
     int checked = 0;
 
+    //STEP1-1초기화
     for (x = 0;x < V;x++) {
         distance[x] = a[s][x];
-
         if (x != s) parent[x] = s;
     }
+
+    //STEP1-2 시작값 체크하고 거리 출력
     check[s] = 1;
     checked++;
 
     print_distance(distance, s, V);
 
+
+
     while (checked < V) {
+        //STEP2-1 체크 안된것 부터 시작
         x = 0;
         while (check[x]) x++;
-        
-        for (i = x;i < V;i++)
+
+        //STEP2-2 체크안된 것 중에서 거리 젤 작은걸 선택
+        for (i = x;i < V;i++) {
             if (check[i] == 0 && distance[i] < distance[x]) x = i;
+        }
+            //STEP 2-3 X를 체크
+            check[x] = 1;
+            checked++;
 
-        check[x] = 1;
-        checked++;
+            //STEP 3 X와 연결된 Y를 체크
+            for (y = 0;y < V;y++) {
+                //STEP 3-1 (3가지)조건일 때는 스킵
+                if (x == y || a[x][y] >= INFINITE || check[y]) continue;
 
-        for (y = 0;y < V;y++) {
-            if (x == y || a[x][y] >= INFINITE || check[y]) continue;
-            d = distance[x] + a[x][y];
-
-            if (d < distance[y]) {
+                //STEP 3-2 거리,부모 업데이트 진행
+                d = a[x][y] + distance[x];
+                if (d < distance[y]) {
                     distance[y] = d;
                     parent[y] = x;
-		    }
+                }
+
+            }
+            print_distance(distance, x, V);
+
         }
-        print_distance(distance, x, V);
     }
 
-}
+
 
 // 부모 트리 출력
 void print_tree(int parent[], int V, int start) {
