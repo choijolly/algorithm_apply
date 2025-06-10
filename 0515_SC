@@ -1,0 +1,138 @@
+#include <stdio.h>
+#include <stdlib.h>
+#define _CRT_SECURNO_WARNINGS
+#pragma warning(disable: 4996)
+#define MAX_NODE 999
+#define MAX 10
+// 인접리스트 기반 그래프 위한 구조체 선언
+typedef struct node {
+    int vertex; // 해당 노드
+    struct node* next;
+}node;
+// 문자를 숫자로 변환(아스키 코드 이용)
+int name2int(char c) {
+    return c - 'A';
+}
+// 숫자를 문자로 변환(아스키 코드 이용)
+char int2name(int i) {
+    return i + 'A';
+}
+
+
+FILE* fp;
+node* GL[MAX_NODE];
+// 인접리스트 기반 그래프
+void input_adjlist(node* a[], int* V, int* E) {
+    char vertex[3];
+    int i, j;
+    node* t;
+    printf("\nInput number of nodes & edges->\n");
+    fscanf(fp, "%d %d", V, E);
+    for (i = 0; i < *V; i++)
+        a[i] = NULL;
+    printf("Input two nodes of edge and weight ->\n");
+    for (j = 0; j < *E; j++) {
+        fscanf(fp, "%s", vertex);
+        i = name2int(vertex[0]);
+        t = (node*)malloc(sizeof(node));
+        t->vertex = name2int(vertex[1]);
+        t->next = a[i];
+        a[i] = t;
+    }
+}
+// 인접리스트 기반 그래프 출력
+void print_adjlist(node* a[], int V)
+{
+    printf("\n");
+    node* t; // 포인터 배열을 다루기 위한 구조체 포인터 변수 선언
+    for (int i = 0; i < V; i++) {
+        printf("%c", int2name(i)); // 첫번째 열에 모든 노드 출력
+        for (t = a[i]; t != NULL; t = t->next)
+            printf(" -> %c", int2name(t->vertex));
+        printf("\n");
+    }
+}
+// 스택 관련 변수 및 함수
+int stack[MAX];
+int top;
+void init_stack()
+{
+    top = -1;
+}
+int push(int i)
+{
+    if (top >= MAX - 1) {
+        printf("Stack overflow!\n");
+        return -1;
+    }
+    stack[++top] = i;
+    return i;
+}
+int pop()
+{
+    if (top < 0) {
+        printf("Stack underflow!\n");
+        return -1;
+    }
+    return stack[top--];
+}
+int stack_empty()
+{
+    return (top < 0); // 비어있으면 1을 반환
+}
+int order; // 방문 순서 변수 선언
+int check[MAX_NODE]; // 방문순서 저장 배열
+int strong_recur(node* g[], int i)
+{
+    int m, min, k, flag;
+    node* t;
+    check[i] = min = ++order; // 방문 순서 저장
+    push(i); // 방문한 노드 스택에 푸시
+    for (t = g[i]; t != NULL; t = t->next) { // 푸시한 노드와 연결된 노트 탐색
+        if (check[t->vertex] == 0) // 방문을 안 했다면
+            m = strong_recur(g, t->vertex); // 스택에 넣는 과정 반복
+        else
+            m = check[t->vertex];
+        if (m < min) min = m; // 최솟값 유지
+    }
+    // check for cycle
+    if (min == check[i]) {  // 최솟값이 서로 같으면
+        flag = 0;
+        while ((k = pop()) != i) { // 팝한 것이 본인이 아니라면
+            printf("%2c", int2name(k)); // 스택에 있는 것을 출력
+            check[k] = MAX_NODE + 1; // 중복 방지
+            flag = 1;
+        }
+        if (flag) printf("%2c\n", int2name(k)); // 마지막 값을 출력, 해당 노드 본인
+    }
+    return min;
+}
+void strong(node* g[], int V) {
+    order = 0; // 방문 순서를 0으로 초기화
+    for (int i = 0; i < V; i++)
+        check[i] = 0; // 방문 순서 저장 배열을 모두 0으로 초기화
+    printf("\nStrongly Connected -> \n");
+    for (int i = 0; i < V; i++) // 모든 노드에 대해 반복  (서로 끊겨져 있는 것(= 이쪽으로 향하는 화살표X)을 검사)
+        if (check[i] == 0) strong_recur(g, i); // 해당 노드 방문 안했다면 검사
+
+    //각 check배열 출력(디버깅용)
+    /*for (int i = 0; i < V; i++) {
+		printf("%c :%d\n", int2name(i), check[i]);
+    }*/  
+
+
+}
+
+
+void main() {
+    int V, E;
+    // 인접 리스트 기반 그래프
+    fp = fopen("C:\\Users\\asdzx\\Desktop\\graph_strong.txt", "r");
+    
+
+    input_adjlist(GL, &V, &E);
+    fclose(fp);
+    print_adjlist(GL, V);
+    // Stongly Connected
+    strong(GL, V);
+}
