@@ -117,15 +117,18 @@ void forward_state(head net[], int V) {
     for (i = 0; i < V; i++)
         if (net[i].count == 0) push(i);
 
-    while (!stack_empty()) {
-        j = pop();
-        for (ptr = net[j].next; ptr; ptr = ptr->next) {
-            k = ptr->vertex;
-            net[k].count--;
-            if (net[k].count == 0)
-                push(k);
-            if (earliest[k] < earliest[j] + ptr->weight)
-                earliest[k] = earliest[j] + ptr->weight;
+    for (i = 0;i < V;i++) {
+        if (!stack_empty()) {
+            j = pop();
+
+            for (ptr = net[j].next; ptr; ptr = ptr->next) {
+                k = ptr->vertex;
+                net[k].count--;
+                if (net[k].count == 0)
+                    push(k);
+                if (earliest[k] < earliest[j] + ptr->weight)
+                    earliest[k] = earliest[j] + ptr->weight;
+            }
         }
     }
 }
@@ -134,27 +137,32 @@ void forward_state(head net[], int V) {
 void backward_state(head net[], int V) {
     int i, j, k, l;
     node* ptr;
-    init_stack();
-    set_count_outdegree;
+    init_stack;
+    set_count_outdegree(net, V);
 
     for (i = 0; i < V; i++) latest[i] = earliest[V - 1];
     for (i = 0; i < V; i++)
         if (net[i].count == 0) push(i);
 
-    while (!stack_empty()) {
-        j = pop();
-        for (l = 0; l < V; l++) {
-            for (ptr = net[l].next; ptr; ptr = ptr->next) {
-                if (ptr->vertex == j) {
-                    k = l;
-                    if (--net[k].count == 0)
-                        push(k);
-                    if (latest[k] > latest[j] - ptr->weight)
-                        latest[k] = latest[j] - ptr->weight;
+    for (i = 0;i < V;i++) {
+        if (!stack_empty()) {
+            j = pop();
+            printf("%c ", int2name(j));
+
+            for (l = 0; l < V; l++) {
+                for (ptr = net[l].next; ptr; ptr = ptr->next) {
+                    if (ptr->vertex == j) {
+                        k = l;
+                        net[k].count--;
+                        if (net[k].count == 0)
+                            push(k);
+                        if (latest[k] > latest[j] - ptr->weight)
+                            latest[k] = latest[j] - ptr->weight;
+                    }
                 }
             }
         }
-    }
+   }
 }
 
 // Professor's print_critical_activity 함수 통합
@@ -182,7 +190,7 @@ int main(void) {
     int V, E, k;
 
     // 파일 열기 (경로 확인)
-    fp = fopen("C:\\Users\\미경\\Downloads\\graph_AOE.txt", "r");
+    fp = fopen("C:\\Users\\asdzx\\Desktop\\graph_AOE.txt", "r");
     if (!fp) {
         perror("파일 열기 실패");
         return 1;
